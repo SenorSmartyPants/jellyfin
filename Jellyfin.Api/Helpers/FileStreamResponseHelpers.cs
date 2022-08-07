@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.IO;
 using System.Net.Http;
 using System.Net.Mime;
@@ -9,6 +10,7 @@ using Jellyfin.Api.Models.StreamingDtos;
 using MediaBrowser.Controller.MediaEncoding;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Net.Http.Headers;
 
 namespace Jellyfin.Api.Helpers
@@ -82,16 +84,40 @@ namespace Jellyfin.Api.Helpers
             // Use the command line args with a dummy playlist path
             var outputPath = state.OutputFilePath;
 
-            httpContext.Response.Headers[HeaderNames.AcceptRanges] = "none";
+            httpContext.Response.Headers[HeaderNames.AcceptRanges] = "bytes";
+            // need to estimate the output file size - HeaderNames.ContentLength
+            // not right if copying stream, find original stream sizes
+
+            double runTimeSeconds = state.RunTimeTicks.GetValueOrDefault() / 10000000;
+            // add a couple seconds for overhead
+            runTimeSeconds += 8;
+
+            // todo: examine which streams are being output, copied, transcoded
+            double estimatedLength = 0;
+            if (state.OutputAudioCodec.Equals("copy", StringComparison.Ordinal))
+            {
+                estimatedLength += state.AudioStream.BitRate.GetValueOrDefault() * runTimeSeconds;
+            }
+            else
+            {
+                estimatedLength += state.OutputAudioBitrate.GetValueOrDefault() * runTimeSeconds;
+            }
+
+            if (state.OutputVideoCodec.Equals("copy", StringComparison.Ordinal))
+            {
+                estimatedLength += state.VideoStream.BitRate.GetValueOrDefault() * runTimeSeconds;
+            }
+            else
+            {
+                estimatedLength += state.OutputVideoBitrate.GetValueOrDefault() * runTimeSeconds;
+            }
+            int estimatedBytes = (int) Math.Round(estimatedLength / 8); // Convert to bytes
+
+            httpContext.Response.Headers[HeaderNames.ContentLength] = Math.Round(estimatedLength).ToString(CultureInfo.InvariantCulture);
 
             var contentType = state.GetMimeType(outputPath);
 
-            // Headers only
-            if (isHeadRequest)
-            {
-                httpContext.Response.Headers[HeaderNames.ContentType] = contentType;
-                return new OkResult();
-            }
+            var rangeHeaders = httpContext.Request.Headers[HeaderNames.Range];
 
             var transcodingLock = transcodingJobHelper.GetTranscodingLock(outputPath);
             await transcodingLock.WaitAsync(cancellationTokenSource.Token).ConfigureAwait(false);
@@ -109,7 +135,8 @@ namespace Jellyfin.Api.Helpers
                 }
 
                 var stream = new ProgressiveFileStream(outputPath, job, transcodingJobHelper);
-                return new FileStreamResult(stream, contentType);
+                stream.SetLength(estimatedBytes);
+                return new FileStreamResult(stream, contentType) { EnableRangeProcessing = true };
             }
             finally
             {

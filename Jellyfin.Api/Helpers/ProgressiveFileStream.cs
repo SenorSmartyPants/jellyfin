@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,6 +19,7 @@ namespace Jellyfin.Api.Helpers
         private readonly TranscodingJobHelper? _transcodingJobHelper;
         private readonly int _timeoutMs;
         private bool _disposed;
+        private long _estimatedBytes;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ProgressiveFileStream"/> class.
@@ -52,19 +54,19 @@ namespace Jellyfin.Api.Helpers
         public override bool CanRead => _stream.CanRead;
 
         /// <inheritdoc />
-        public override bool CanSeek => false;
+        public override bool CanSeek => true; // _stream.CanSeek;
 
         /// <inheritdoc />
         public override bool CanWrite => false;
 
         /// <inheritdoc />
-        public override long Length => throw new NotSupportedException();
+        public override long Length => _estimatedBytes; // throw new NotSupportedException();
 
         /// <inheritdoc />
         public override long Position
         {
-            get => throw new NotSupportedException();
-            set => throw new NotSupportedException();
+            get => _stream.Position;
+            set => _stream.Position = value;
         }
 
         /// <inheritdoc />
@@ -127,11 +129,37 @@ namespace Jellyfin.Api.Helpers
 
         /// <inheritdoc />
         public override long Seek(long offset, SeekOrigin origin)
-            => throw new NotSupportedException();
+        //            => throw new NotSupportedException();
+        {
+            Console.WriteLine(String.Format(CultureInfo.InvariantCulture, "offset = {0} origin = {1}", offset, origin));
+            Console.WriteLine(String.Format(CultureInfo.InvariantCulture, "bytes downloaded = {0}", _job.BytesDownloaded));
+            Console.WriteLine(String.Format(CultureInfo.InvariantCulture, "bytes transcoded = {0}", _job.BytesTranscoded));
+            Console.WriteLine(String.Format(CultureInfo.InvariantCulture, "_stream length = {0}", _stream.Length));
+            Console.WriteLine(String.Format(CultureInfo.InvariantCulture, "_stream length - offset = {0}", _stream.Length - offset));
+
+            // _job.BytesTranscoded seems to stay empty
+            if (origin == SeekOrigin.Begin)
+            {
+                // if (offset <= (_job.BytesTranscoded ?? 0))
+                if (offset <= _stream.Length)
+                {
+                    this.Position = offset;
+                }
+                else
+                {
+                    throw new NotSupportedException();
+                }
+                // wait if transcode hasn't gotten to the bytes yet?
+                // else ?
+            }
+            return this.Position;
+        }
 
         /// <inheritdoc />
         public override void SetLength(long value)
-            => throw new NotSupportedException();
+        {
+            _estimatedBytes = value;
+        }
 
         /// <inheritdoc />
         public override void Write(byte[] buffer, int offset, int count)
