@@ -55,8 +55,10 @@ namespace Jellyfin.Naming.Tests.Video
         {
             var files = new[]
             {
-                @"/movies/The Phantom of the Opera (1925)/The Phantom of the Opera (1925) - 1925 version.mkv",
-                @"/movies/The Phantom of the Opera (1925)/The Phantom of the Opera (1925) - 1929 version.mkv"
+                // if using year in version name, must be in brackets.
+                // Otherwise it will be matched as a possible tv episode and not grouped
+                @"/movies/The Phantom of the Opera (1925)/The Phantom of the Opera (1925) - [1925 version].mkv",
+                @"/movies/The Phantom of the Opera (1925)/The Phantom of the Opera (1925) - [1929 version].mkv"
             };
 
             var result = VideoListResolver.Resolve(
@@ -108,8 +110,8 @@ namespace Jellyfin.Naming.Tests.Video
                 files.Select(i => VideoResolver.Resolve(i, false, _namingOptions)).OfType<VideoFileInfo>().ToList(),
                 _namingOptions).ToList();
 
-            Assert.Single(result);
-            Assert.Equal(7, result[0].AlternateVersions.Count);
+            Assert.Equal(8, result.Count);
+            Assert.Empty(result[0].AlternateVersions);
         }
 
         [Fact]
@@ -181,6 +183,8 @@ namespace Jellyfin.Naming.Tests.Video
         [Fact]
         public void TestMultiVersion5()
         {
+            // not officially supported method of multi versions
+
             var files = new[]
             {
                 @"/movies/Iron Man/Iron Man.mkv",
@@ -197,11 +201,12 @@ namespace Jellyfin.Naming.Tests.Video
                 files.Select(i => VideoResolver.Resolve(i, false, _namingOptions)).OfType<VideoFileInfo>().ToList(),
                 _namingOptions).ToList();
 
-            Assert.Single(result);
-            Assert.Equal(7, result[0].AlternateVersions.Count);
+            Assert.Equal(2, result.Count);
+            Assert.Equal(6, result[0].AlternateVersions.Count);
             Assert.False(result[0].AlternateVersions[2].Is3D);
             Assert.True(result[0].AlternateVersions[3].Is3D);
             Assert.True(result[0].AlternateVersions[4].Is3D);
+            Assert.Equal("Iron Man-test", result[1].Name);
         }
 
         [Fact]
@@ -363,6 +368,131 @@ namespace Jellyfin.Naming.Tests.Video
             var result = VideoListResolver.Resolve(new List<VideoFileInfo>(), _namingOptions).ToList();
 
             Assert.Empty(result);
+        }
+
+        [Fact]
+        public void TestMultiVersionEpisodeDontCollapse()
+        {
+            // Test for false positive
+
+            var files = new[]
+            {
+                @"/TV/Dexter/Dexter - S01E01 - One.mkv",
+                @"/TV/Dexter/Dexter - S01E02 - Two.mkv",
+                @"/TV/Dexter/Dexter - S01E03 - Three.mkv",
+                @"/TV/Dexter/Dexter - S01E04 - Four.mkv",
+                @"/TV/Dexter/Dexter - S01E05 - Five.mkv",
+            };
+
+            var result = VideoListResolver.Resolve(
+                files.Select(i => VideoResolver.Resolve(i, false, _namingOptions, false)).OfType<VideoFileInfo>().ToList(),
+                _namingOptions).ToList();
+
+            Assert.Equal(5, result.Count);
+            Assert.Empty(result[0].AlternateVersions);
+        }
+
+        [Fact]
+        public void TestMultiVersionEpisodeDontCollapse2()
+        {
+            // Test for false positive
+
+            var files = new[]
+            {
+                @"/TV/Dexter/Dexter - S01E01 One.mkv",
+                @"/TV/Dexter/Dexter - S01E02 Two.mkv",
+                @"/TV/Dexter/Dexter - S01E03 Three.mkv",
+                @"/TV/Dexter/Dexter - S01E04 Four.mkv",
+                @"/TV/Dexter/Dexter - S01E05 Five.mkv",
+            };
+
+            var result = VideoListResolver.Resolve(
+                files.Select(i => VideoResolver.Resolve(i, false, _namingOptions, false)).OfType<VideoFileInfo>().ToList(),
+                _namingOptions).ToList();
+
+            Assert.Equal(5, result.Count);
+            Assert.Empty(result[0].AlternateVersions);
+        }
+
+        [Fact]
+        public void TestMultiVersionEpisode()
+        {
+            var files = new[]
+            {
+                @"/TV/Dexter/Dexter - S01E01/Dexter - S01E01 - One.mkv",
+                @"/TV/Dexter/Dexter - S01E01/Dexter - S01E01 - Two.mkv",
+            };
+
+            var result = VideoListResolver.Resolve(
+                files.Select(i => VideoResolver.Resolve(i, false, _namingOptions, false)).OfType<VideoFileInfo>().ToList(),
+                _namingOptions).ToList();
+
+            Assert.Single(result);
+            Assert.Single(result[0].AlternateVersions);
+        }
+
+        [Fact]
+        public void TestMultiVersionEpisodeMixedSeriesFolder()
+        {
+            var files = new[]
+            {
+                @"/TV/Dexter/Dexter - S01E01 - One.mkv",
+                @"/TV/Dexter/Dexter - S01E01 - One plus.mkv",
+                @"/TV/Dexter/Dexter - S01E02 - Two.mkv",
+                @"/TV/Dexter/Dexter - S01E03 - Three.mkv",
+                @"/TV/Dexter/Dexter - S02E01 - Ia.mkv",
+                @"/TV/Dexter/Dexter - S02E01 - I.mkv",
+                @"/TV/Dexter/Dexter - S02E02.mkv",
+            };
+
+            var result = VideoListResolver.Resolve(
+                files.Select(i => VideoResolver.Resolve(i, false, _namingOptions, false)).OfType<VideoFileInfo>().ToList(),
+                _namingOptions).ToList();
+
+            Assert.Equal(5, result.Count);
+            Assert.Single(result[0].AlternateVersions);
+            Assert.Empty(result[1].AlternateVersions);
+            Assert.Empty(result[2].AlternateVersions);
+            Assert.Single(result[3].AlternateVersions);
+            Assert.Empty(result[4].AlternateVersions);
+        }
+
+        [Fact]
+        public void TestMultiVersionEpisodeMixedSeasonFolder()
+        {
+            var files = new[]
+            {
+                @"/TV/Dexter/Season 2/Dexter - S02E01 - Ia.mkv",
+                @"/TV/Dexter/Season 2/Dexter - S02E01 - I.mkv",
+                @"/TV/Dexter/Season 2/Dexter - S02E02.mkv",
+            };
+
+            var result = VideoListResolver.Resolve(
+                files.Select(i => VideoResolver.Resolve(i, false, _namingOptions, false)).OfType<VideoFileInfo>().ToList(),
+                _namingOptions).ToList();
+
+            Assert.Equal(2, result.Count);
+            Assert.Single(result[0].AlternateVersions);
+            Assert.Empty(result[1].AlternateVersions);
+        }
+
+        [Fact]
+        public void TestMultiVersionEpisodeMixedSeasonFolderWithYear()
+        {
+            var files = new[]
+            {
+                @"/TV/Name (2020)/Season 1/Name (2020) - S01E01 - [ORIGINAL].mkv",
+                @"/TV/Name (2020)/Season 1/Name (2020) - S01E01 - [VERSION].mkv",
+                @"/TV/Name (2020)/Season 1/Name (2020) - S01E02 - [ORIGINAL].mkv",
+            };
+
+            var result = VideoListResolver.Resolve(
+                files.Select(i => VideoResolver.Resolve(i, false, _namingOptions, false)).OfType<VideoFileInfo>().ToList(),
+                _namingOptions).ToList();
+
+            Assert.Equal(2, result.Count);
+            Assert.Single(result[0].AlternateVersions);
+            Assert.Empty(result[1].AlternateVersions);
         }
     }
 }
