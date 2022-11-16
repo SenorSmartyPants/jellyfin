@@ -2204,7 +2204,7 @@ namespace Emby.Server.Implementations.LiveTv.EmbyTV
             }
         }
 
-        private void SearchForDuplicateShowIds(List<TimerInfo> timers)
+        private void SearchForDuplicateShowIds(IEnumerable<TimerInfo> timers)
         {
             var groups = timers.ToLookup(i => i.ShowId ?? string.Empty).ToList();
 
@@ -2319,7 +2319,7 @@ namespace Emby.Server.Implementations.LiveTv.EmbyTV
                 }
             }
 
-            SearchForDuplicateShowIds(enabledTimersForSeries.Distinct().ToList());
+            SearchForDuplicateShowIds(enabledTimersForSeries.Distinct());
 
             if (deleteInvalidTimers)
             {
