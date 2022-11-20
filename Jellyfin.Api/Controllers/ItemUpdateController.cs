@@ -246,6 +246,11 @@ namespace Jellyfin.Api.Controllers
                 episode.AirsBeforeSeasonNumber = request.AirsBeforeSeasonNumber;
             }
 
+            if (item is LiveTvChannel channel)
+            {
+                channel.Height = request.Height ?? 0;
+            }
+
             item.Tags = request.Tags;
 
             if (request.Taglines != null)
