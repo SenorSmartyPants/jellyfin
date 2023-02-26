@@ -34,7 +34,7 @@ namespace Emby.Server.Implementations.Library.Resolvers
             _videoResolvers = new IItemResolver[] { this };
         }
 
-        protected override Video Resolve(ItemResolveArgs args)
+        public override Video Resolve(ItemResolveArgs args)
         {
             return ResolveVideo<Video>(args, true);
         }
