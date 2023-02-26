@@ -418,15 +418,6 @@ namespace MediaBrowser.Providers.Manager
                 return false;
             }
 
-            // If this restriction is ever lifted, movie xml providers will have to be updated to prevent owned items like trailers from reading those files
-            if (!item.OwnerId.Equals(default))
-            {
-                if (provider is ILocalMetadataProvider || provider is IRemoteMetadataProvider)
-                {
-                    return false;
-                }
-            }
-
             return true;
         }
 
