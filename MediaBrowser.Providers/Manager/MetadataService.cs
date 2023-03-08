@@ -699,7 +699,6 @@ namespace MediaBrowser.Providers.Manager
                                 // remove imagetype that has just been downloaded
                                 replaceImages.Remove(remoteImage.Type);
                                 localImagesFound = true;
-
                             }
                             catch (HttpRequestException ex)
                             {
