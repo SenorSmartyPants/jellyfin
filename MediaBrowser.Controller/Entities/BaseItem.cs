@@ -76,7 +76,9 @@ namespace MediaBrowser.Controller.Entities
             Model.Entities.ExtraType.DeletedScene,
             Model.Entities.ExtraType.Interview,
             Model.Entities.ExtraType.Sample,
-            Model.Entities.ExtraType.Scene
+            Model.Entities.ExtraType.Scene,
+            Model.Entities.ExtraType.Featurette,
+            Model.Entities.ExtraType.Short
         };
 
         private string _sortName;

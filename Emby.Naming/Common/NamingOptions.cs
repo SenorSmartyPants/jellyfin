@@ -488,13 +488,13 @@ namespace Emby.Naming.Common
                     MediaType.Video),
 
                 new ExtraRule(
-                    ExtraType.Clip,
+                    ExtraType.Short,
                     ExtraRuleType.DirectoryName,
                     "shorts",
                     MediaType.Video),
 
                 new ExtraRule(
-                    ExtraType.Clip,
+                    ExtraType.Featurette,
                     ExtraRuleType.DirectoryName,
                     "featurettes",
                     MediaType.Video),
@@ -503,6 +503,18 @@ namespace Emby.Naming.Common
                     ExtraType.Unknown,
                     ExtraRuleType.DirectoryName,
                     "extras",
+                    MediaType.Video),
+
+                new ExtraRule(
+                    ExtraType.Unknown,
+                    ExtraRuleType.DirectoryName,
+                    "other",
+                    MediaType.Video),
+
+                new ExtraRule(
+                    ExtraType.Clip,
+                    ExtraRuleType.DirectoryName,
+                    "clips",
                     MediaType.Video),
 
                 new ExtraRule(
@@ -608,13 +620,13 @@ namespace Emby.Naming.Common
                     MediaType.Video),
 
                 new ExtraRule(
-                    ExtraType.Clip,
+                    ExtraType.Featurette,
                     ExtraRuleType.Suffix,
                     "-featurette",
                     MediaType.Video),
 
                 new ExtraRule(
-                    ExtraType.Clip,
+                    ExtraType.Short,
                     ExtraRuleType.Suffix,
                     "-short",
                     MediaType.Video),
