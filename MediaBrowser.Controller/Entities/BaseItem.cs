@@ -1187,7 +1187,6 @@ namespace MediaBrowser.Controller.Entities
             var path = item.Path;
             if (item.IsFileProtocol && !string.IsNullOrEmpty(path))
             {
-                var displayName = System.IO.Path.GetFileNameWithoutExtension(path);
                 if (HasLocalAlternateVersions)
                 {
                     var containingFolderName = System.IO.Path.GetFileName(ContainingFolderPath);
