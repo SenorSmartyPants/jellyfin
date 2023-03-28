@@ -428,7 +428,11 @@ namespace MediaBrowser.Providers.Manager
                 if (image != null)
                 {
                     var currentImage = item.GetImageInfo(type, 0);
-                    foundImageTypes.Add(type);
+                    // if image file is stored with media, don't replace that later
+                    if (item.ContainingFolderPath is not null && item.ContainingFolderPath.Contains(Path.GetDirectoryName(image.FileInfo.FullName), StringComparison.OrdinalIgnoreCase))
+                    {
+                        foundImageTypes.Add(type);
+                    }
 
                     if (currentImage == null || !string.Equals(currentImage.Path, image.FileInfo.FullName, StringComparison.OrdinalIgnoreCase))
                     {
