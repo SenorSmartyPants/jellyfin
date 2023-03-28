@@ -26,8 +26,6 @@ namespace MediaBrowser.Providers.Manager
         where TItemType : BaseItem, IHasLookupInfo<TIdType>, new()
         where TIdType : ItemLookupInfo, new()
     {
-        private static readonly ImageType[] AllImageTypes = Enum.GetValues<ImageType>();
-
         protected MetadataService(IServerConfigurationManager serverConfigurationManager, ILogger<MetadataService<TItemType, TIdType>> logger, IProviderManager providerManager, IFileSystem fileSystem, ILibraryManager libraryManager)
         {
             ServerConfigurationManager = serverConfigurationManager;
@@ -110,7 +108,7 @@ namespace MediaBrowser.Providers.Manager
             try
             {
                 // Always validate images and check for new locally stored ones.
-                if (ImageProvider.ValidateImages(item, allImageProviders.OfType<ILocalImageProvider>(), refreshOptions.DirectoryService))
+                if (ImageProvider.ValidateImages(item, allImageProviders.OfType<ILocalImageProvider>(), refreshOptions))
                 {
                     updateType |= ItemUpdateType.ImageUpdate;
                 }
@@ -669,8 +667,7 @@ namespace MediaBrowser.Providers.Manager
             }
 
             var hasLocalMetadata = false;
-            var replaceImages = AllImageTypes.ToList();
-            var localImagesFound = false;
+            var foundImageTypes = new List<ImageType>();
 
             foreach (var provider in providers.OfType<ILocalMetadataProvider<TItemType>>())
             {
@@ -704,9 +701,8 @@ namespace MediaBrowser.Providers.Manager
                                 await ProviderManager.SaveImage(item, remoteImage.Url, remoteImage.Type, null, cancellationToken).ConfigureAwait(false);
                                 refreshResult.UpdateType |= ItemUpdateType.ImageUpdate;
 
-                                // remove imagetype that has just been downloaded
-                                replaceImages.Remove(remoteImage.Type);
-                                localImagesFound = true;
+                                // remember imagetype that has just been downloaded
+                                foundImageTypes.Add(remoteImage.Type);
                             }
                             catch (HttpRequestException ex)
                             {
@@ -720,13 +716,12 @@ namespace MediaBrowser.Providers.Manager
                             imageService.PruneImages(item, oldBackdropImages);
                         }
 
-                        if (localImagesFound)
+                        if (foundImageTypes.Count > 0)
                         {
-                            options.ReplaceAllImages = false;
-                            options.ReplaceImages = replaceImages;
+                            imageService.UpdateReplaceImages(options, foundImageTypes);
                         }
 
-                        if (imageService.MergeImages(item, localItem.Images))
+                        if (imageService.MergeImages(item, localItem.Images, options))
                         {
                             refreshResult.UpdateType |= ItemUpdateType.ImageUpdate;
                         }
