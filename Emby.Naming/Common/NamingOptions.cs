@@ -635,6 +635,12 @@ namespace Emby.Naming.Common
                     ExtraType.Unknown,
                     ExtraRuleType.Suffix,
                     "-extra",
+                    MediaType.Video),
+
+                new ExtraRule(
+                    ExtraType.Unknown,
+                    ExtraRuleType.Suffix,
+                    "-other",
                     MediaType.Video)
             };
 
