@@ -396,7 +396,8 @@ namespace Jellyfin.Naming.Tests.Video
 
             var result = VideoListResolver.Resolve(
                 files.Select(i => VideoResolver.Resolve(i, false, _namingOptions)).OfType<VideoFileInfo>().ToList(),
-                _namingOptions).ToList();
+                _namingOptions,
+                CollectionType.movies).ToList();
 
             Assert.Single(result);
             Assert.Equal("/movies/X-Men Apocalypse (2016)/X-Men Apocalypse (2016).mkv", result[0].Files[0].Path);
