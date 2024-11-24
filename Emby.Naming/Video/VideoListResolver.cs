@@ -269,7 +269,7 @@ namespace Emby.Naming.Video
         {
             // Grouper for tv shows/episodes should be everything before space-dash-space
             var resolver = new EpisodeResolver(namingOptions);
-            EpisodeInfo? episodeInfo = resolver.Resolve(testFilePath, false);
+            var episodeInfo = resolver.Resolve(testFilePath, false);
             ReadOnlySpan<char> seriesName = episodeInfo!.SeriesName;
 
             var filename = Path.GetFileNameWithoutExtension(testFilePath);
